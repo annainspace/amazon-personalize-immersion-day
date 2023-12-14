@@ -42,12 +42,148 @@ Parameters:
     # Default: 'Media'
     Description: Select the industry domain to use for the Amazon Personalize Immersion Day.
     AllowedValues:
-      - 'Retail'
       - 'Media'
+      - 'Retail'
+
 
 Resources:
   SAMArtifactsBucket:
     Type: AWS::S3::Bucket
+        # Tagging Ressources to leverage SSM's Application Manager.
+        # ---
+    Properties:
+      Tags:
+        - Key: AppManagerCFNStackKey
+          Value: !Ref 'AWS::StackId'
+
+  # AWS Cloudformation Custom Resource
+  # ---
+  # This custom resource calls AWS Lambda Function "BucketJanitor" before
+  # deleting the bucket as AWS Cloudformation doesn't allow to delete 
+  # non-empty buckets.
+  EmptyS3BucketOnDelete:
+    Type: Custom::janitor
+    Properties:
+      ServiceToken: 
+        Fn::GetAtt: 
+          - "BucketJanitor"
+          - "Arn"
+      BucketName: !Ref SAMArtifactsBucket
+    DependsOn: AmazonS3BucketAccessPolicy
+
+    # AWS Lambda function
+  # ---
+  # This function will empty the Amazon S3 Bucket "SAMArtifactsBucket" upon stack 
+  # deletion.
+  BucketJanitor:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: 
+        ZipFile: 
+          !Sub |
+            #!/usr/bin/env python
+            # -*- coding: utf-8 -*-
+
+            import boto3, logging
+            import cfnresponse
+
+            logger = logging.getLogger()
+            logger.setLevel(logging.INFO)
+
+            def lambda_handler(event, context):
+                logger.info("event: {}".format(event))
+                try:
+                    bucket = event['ResourceProperties']['BucketName']
+                    logger.info("bucket: {}, event['RequestType']: {}".format(bucket,event['RequestType']))
+                    # ---
+                    # We only trigger the janitor if Cloudformation wants to 
+                    # delete the bucket (via a Custom Resource)
+                    # ---
+                    if event['RequestType'] == 'Delete':
+                        s3 = boto3.resource('s3')
+                        # ---
+                        # convert bucket to string
+                        # ---
+                        bucket = str(bucket)
+                        bucket_versioning_status = s3.BucketVersioning(bucket)
+                        bucket = s3.Bucket(bucket)
+                        # ---
+                        # is versioning enabled ?
+                        # ---
+                        if bucket_versioning_status.status == 'Enabled':
+                            print("### Bucket Versioning is enabled")
+                            object_keys = []
+                            # ---
+                            # listing all object versions and adding them to an array.
+                            # ---
+                            for version in bucket.object_versions.all():
+                                if version.object_key not in object_keys:
+                                    object_keys.append(version.object_key)
+                            # ---
+                            # deleting all the object versions in our array.
+                            # ---
+                            for key in object_keys:
+                                print("deleting: " + key)
+                                bucket.object_versions.filter(Prefix=key).delete()
+                        else:
+                            print("### Bucket Versioning is NOT enabled")
+                            # ---
+                            # delete all the objects
+                            # ---
+                            bucket.objects.all().delete()
+                    # ---
+                    # triger sendResponseCfn() to signal back to Cloudformation
+                    # that all went well.
+                    # ---
+                    sendResponseCfn(event, context, cfnresponse.SUCCESS)
+
+                except Exception as e:
+                    # ---
+                    # triger sendResponseCfn() to signal back to Cloudformation
+                    # that something went wrong and point to Cloudwatch Logs.
+                    # ---
+                    logger.info("Exception: {}".format(e))
+                    sendResponseCfn(event, context, cfnresponse.FAILED)
+
+            def sendResponseCfn(event, context, responseStatus):
+                responseData = {}
+                responseData['Data'] = {}
+                cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")
+
+      Description: This function will empty the Amazon S3 Bucket "SAMArtifactsBucket" upon stack deletion.
+      Handler: "index.lambda_handler"
+      Runtime: python3.8
+      MemorySize: 128
+      Timeout: 60
+      Role: !GetAtt BucketJanitorRole.Arn
+      # Tagging Ressources to leverage SSM's Application Manager.
+      # ---
+      Tags:
+        - Key: AppManagerCFNStackKey
+          Value: !Ref 'AWS::StackId'
+
+  # AWS Lambda Execution Role
+  # ---
+  BucketJanitorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      # Tagging Ressources to leverage SSM's Application Manager.
+      # ---
+      Tags:
+        - Key: AppManagerCFNStackKey
+          Value: !Ref 'AWS::StackId'
+
 
   # Amazon Personalize Execution Role
   # ---
@@ -136,51 +272,28 @@ Resources:
               - !Sub arn:aws:s3:::${SAMArtifactsBucket}/*
             Principal:
               Service: personalize.amazonaws.com
-
-  # SageMaker Execution Role
-  # SageMakerIamRole:
-  #   Type: "AWS::IAM::Role"
-  #   Properties:
-  #     AssumeRolePolicyDocument:
-  #       Version: "2012-10-17"
-  #       Statement:
-  #         -
-  #           Effect: Allow
-  #           Principal:
-  #             Service: sagemaker.amazonaws.com
-  #           Action: sts:AssumeRole
-  #     Path: "/"
-  #     ManagedPolicyArns:
-  #       - "arn:aws:iam::aws:policy/IAMFullAccess"
-  #       - "arn:aws:iam::aws:policy/AWSCloudFormationFullAccess"
-  #       - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-  #       - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-  #       - "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
-  #       - "arn:aws:iam::aws:policy/AWSLambda_FullAccess"
-  #       - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
-  #       - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
-
+              
   SageMakerIamRole:
-  Type: "AWS::IAM::Role"
-  Properties:
-    AssumeRolePolicyDocument:
-      Version: "2012-10-17"
-      Statement:
-        -
-          Effect: Allow
-          Principal:
-            Service: sagemaker.amazonaws.com
-          Action: sts:AssumeRole
-    Path: "/"
-    ManagedPolicyArns:
-      - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-      - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
-      - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
-    # Tagging Ressources to leverage SSM's Application Manager.
-    # ---
-    Tags:
-      - Key: AppManagerCFNStackKey
-        Value: !Ref 'AWS::StackId'
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: Allow
+            Principal:
+              Service: sagemaker.amazonaws.com
+            Action: sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+        - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+      # Tagging Ressources to leverage SSM's Application Manager.
+      # ---
+      Tags:
+        - Key: AppManagerCFNStackKey
+          Value: !Ref 'AWS::StackId'
 
   # SageMaker notebook
   NotebookInstance:
@@ -236,7 +349,7 @@ Resources:
                 #!/bin/bash
                 sudo -u ec2-user -i <<'EOF'
                 cd /home/ec2-user/SageMaker/
-                git clone https://github.com/aws-samples/amazon-personalize-immersion-day.git
+                git clone --single-branch --branch immersion-day-refactor https://github.com/annainspace/amazon-personalize-immersion-day.git
                 cd /home/ec2-user/SageMaker/amazon-personalize-immersion-day/
                 nohup sh ./${domain}/pretrain/deploy.sh "${SAMArtifactsBucket}" &
                 EOF

@@ -297,12 +297,13 @@ Resources:
   NotebookInstance:
     Type: "AWS::SageMaker::NotebookInstance"
     Properties:
+      # TODO Change to actual immersion day repo
       # bumped ml.t2.medium to ml.t3.medium for newer regions compatibility
       InstanceType: "ml.t3.medium"
       NotebookInstanceName: !Ref NotebookName
       RoleArn: !GetAtt SageMakerIamRole.Arn
       VolumeSizeInGB: !Ref VolumeSize
-      DefaultCodeRepository: https://github.com/aws-samples/amazon-personalize-immersion-day.git
+      DefaultCodeRepository: https://github.com/annainspace/amazon-personalize-immersion-day.git
 
   # SSM Parameter with the s3 bucket for personalize
   # ---
