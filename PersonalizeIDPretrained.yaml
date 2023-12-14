@@ -350,6 +350,6 @@ Resources:
                 sudo -u ec2-user -i <<'EOF'
                 cd /home/ec2-user/SageMaker/
                 git clone --single-branch --branch immersion-day-refactor https://github.com/annainspace/amazon-personalize-immersion-day.git
-                cd /home/ec2-user/SageMaker/amazon-personalize-immersion-day/
-                nohup sh ./${domain}/pretrain/deploy.sh "${SAMArtifactsBucket}" &
+                cd /home/ec2-user/SageMaker/amazon-personalize-immersion-day/${domain}/
+                nohup sh ./deploy.sh "${SAMArtifactsBucket}" &
                 EOF
