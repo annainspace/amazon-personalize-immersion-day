@@ -55,10 +55,10 @@ TODO: update these links:
 
 2. Go through notebook with previously created resources. All or the majority of the resources will already be created and cells will just retrieve the information of these existing resources to use them in following steps. 
 
+To pre-provision resources and pre-train models, you can deploy the 'pretrained' Amazon CloudFormation template ([PersonalizeIDPretrained.yaml](../PersonalizeIDPretrained.yaml)) or click on the buttons below after logging into your AWS account.
+
 > [!IMPORTANT]  
 > Make sure to specify the right domain for your immersion day, either 'Media' or 'Retail' so the right resources are provisioned.
-
-To pre-provision resources and pre-train models, you can deploy the 'pretrained' Amazon CloudFormation template ([PersonalizeIDPretrained.yaml](../PersonalizeIDPretrained.yaml)) or click on the buttons below after logging into your AWS account.
 
 TODO: update these links:
 

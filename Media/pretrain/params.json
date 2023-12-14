@@ -142,13 +142,15 @@
     {
       "serviceConfig": {
         "name": "workshop_more_like_x",
-        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-more-like-x"
+        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-more-like-x",
+        "recommenderConfig": {"enableMetadataWithRecommendations": true}
       }
     },
     {
       "serviceConfig": {
         "name": "workshop_top_picks_for_you",
-        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-top-picks"
+        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-top-picks",
+        "recommenderConfig": {"enableMetadataWithRecommendations": true}
       }
     }
   ],
@@ -156,15 +158,15 @@
     {
       "serviceConfig": {
 
-        "name": "workshop_persoanlized_ranking",
+        "name": "workshop_personalized_ranking",
         "recipeArn": "arn:aws:personalize:::recipe/aws-personalized-ranking"
       },
       "campaigns": [
         {
           "serviceConfig": {
-
-            "name": "workshop_persoanlized_ranking_campaign",
-            "minProvisionedTPS": 1
+            "name": "workshop_personalized_ranking_campaign",
+            "minProvisionedTPS": 1,
+            "campaignConfig": {"enableMetadataWithRecommendations": true}
           }
         }
       ]
