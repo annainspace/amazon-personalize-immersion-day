@@ -55,6 +55,12 @@ Resources:
       Tags:
         - Key: AppManagerCFNStackKey
           Value: !Ref 'AWS::StackId'
+  
+  MLOpsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://s3.amazonaws.com/solutions-reference/maintaining-personalized-experiences-with-machine-learning/latest/maintaining-personalized-experiences-with-machine-learning.template
+
 
   # AWS Cloudformation Custom Resource
   # ---
@@ -285,6 +291,16 @@ Resources:
               Service: sagemaker.amazonaws.com
             Action: sts:AssumeRole
       Path: "/"
+      Policies:
+        - PolicyName: !Sub "${AWS::StackName}-sagemaker-s3-poicy"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:*"
+                  - "s3-object-lambda:*"
+                Resource: "*"
+                Effect: Allow
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
