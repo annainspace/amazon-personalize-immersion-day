@@ -305,6 +305,9 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+        - "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
+
       # Tagging Ressources to leverage SSM's Application Manager.
       # ---
       Tags:
@@ -369,3 +372,9 @@ Resources:
                 cd /home/ec2-user/SageMaker/amazon-personalize-immersion-day/${domain}/
                 nohup sh ./deploy.sh "${SAMArtifactsBucket}" &
                 EOF
+
+  Outputs:
+    MLOpsBucket:
+      Description: The name of the MLOps input bucket
+      Value: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
+    

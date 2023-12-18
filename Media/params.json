@@ -142,15 +142,13 @@
     {
       "serviceConfig": {
         "name": "workshop_more_like_x",
-        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-more-like-x",
-        "recommenderConfig": {"enableMetadataWithRecommendations": true}
+        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-more-like-x"
       }
     },
     {
       "serviceConfig": {
         "name": "workshop_top_picks_for_you",
-        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-top-picks",
-        "recommenderConfig": {"enableMetadataWithRecommendations": true}
+        "recipeArn": "arn:aws:personalize:::recipe/aws-vod-top-picks"
       }
     }
   ],
@@ -165,8 +163,7 @@
         {
           "serviceConfig": {
             "name": "workshop_personalized_ranking_campaign",
-            "minProvisionedTPS": 1,
-            "campaignConfig": {"enableMetadataWithRecommendations": true}
+            "minProvisionedTPS": 1
           }
         }
       ]
