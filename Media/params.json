@@ -1,7 +1,7 @@
 {
   "datasetGroup": {
     "serviceConfig": {
-      "name": "personalize-poc-movielens",
+      "name": "personalize-immersion-day",
       "domain": "VIDEO_ON_DEMAND"
     }
   },

@@ -47,14 +47,14 @@ Parameters:
 
 
 Resources:
-  SAMArtifactsBucket:
-    Type: AWS::S3::Bucket
-        # Tagging Ressources to leverage SSM's Application Manager.
-        # ---
-    Properties:
-      Tags:
-        - Key: AppManagerCFNStackKey
-          Value: !Ref 'AWS::StackId'
+  # SAMArtifactsBucket:
+  #   Type: AWS::S3::Bucket
+  #       # Tagging Ressources to leverage SSM's Application Manager.
+  #       # ---
+  #   Properties:
+  #     Tags:
+  #       - Key: AppManagerCFNStackKey
+  #         Value: !Ref 'AWS::StackId'
   
   MLOpsStack:
     Type: AWS::CloudFormation::Stack
@@ -74,12 +74,12 @@ Resources:
         Fn::GetAtt: 
           - "BucketJanitor"
           - "Arn"
-      BucketName: !Ref SAMArtifactsBucket
+      BucketName: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
     DependsOn: AmazonS3BucketAccessPolicy
 
     # AWS Lambda function
   # ---
-  # This function will empty the Amazon S3 Bucket "SAMArtifactsBucket" upon stack 
+  # This function will empty the Amazon S3 Bucket "MLOpsStack.Outputs.PersonalizeBucketName" upon stack 
   # deletion.
   BucketJanitor:
     Type: AWS::Lambda::Function
@@ -156,7 +156,7 @@ Resources:
                 responseData['Data'] = {}
                 cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")
 
-      Description: This function will empty the Amazon S3 Bucket "SAMArtifactsBucket" upon stack deletion.
+      Description: This function will empty the Amazon S3 Bucket "MLOpsStack.Outputs.PersonalizeBucketName" upon stack deletion.
       Handler: "index.lambda_handler"
       Runtime: python3.8
       MemorySize: 128
@@ -229,8 +229,8 @@ Resources:
               Action:
                 - "s3:*"
               Resource:
-                - !Sub arn:aws:s3:::${SAMArtifactsBucket}
-                - !Sub arn:aws:s3:::${SAMArtifactsBucket}/*
+                - !Sub arn:aws:s3:::${MLOpsStack.Outputs.PersonalizeBucketName}
+                - !Sub arn:aws:s3:::${MLOpsStack.Outputs.PersonalizeBucketName}/*
             -
               Effect: Allow
               Action:
@@ -263,7 +263,7 @@ Resources:
   PersonalizeBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref SAMArtifactsBucket
+      Bucket: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
       PolicyDocument:
         Version: '2012-10-17'
         Id: 'PersonalizeS3BucketAccessPolicy'
@@ -274,8 +274,8 @@ Resources:
               - 's3:ListBucket'
             Effect: Allow
             Resource:
-              - !Sub arn:aws:s3:::${SAMArtifactsBucket}
-              - !Sub arn:aws:s3:::${SAMArtifactsBucket}/*
+              - !Sub arn:aws:s3:::${MLOpsStack.Outputs.PersonalizeBucketName}
+              - !Sub arn:aws:s3:::${MLOpsStack.Outputs.PersonalizeBucketName}/*
             Principal:
               Service: personalize.amazonaws.com
               
@@ -305,7 +305,6 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/service-role/AmazonPersonalizeFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess"
-        - "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
         - "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
 
       # Tagging Ressources to leverage SSM's Application Manager.
@@ -331,7 +330,7 @@ Resources:
     Properties:
       Name: /cloudformation/personalize-s3-bucket
       Type: String
-      Value: !Ref SAMArtifactsBucket
+      Value: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
       Description: SSM Parameter containing the s3 bucket for Personalize Samples.
       # Tagging Ressources to leverage SSM's Application Manager.
       # ---
@@ -370,11 +369,11 @@ Resources:
                 cd /home/ec2-user/SageMaker/
                 git clone --single-branch --branch immersion-day-refactor https://github.com/annainspace/amazon-personalize-immersion-day.git
                 cd /home/ec2-user/SageMaker/amazon-personalize-immersion-day/${domain}/
-                nohup sh ./deploy.sh "${SAMArtifactsBucket}" &
+                nohup sh ./deploy.sh "${MLOpsStack.Outputs.PersonalizeBucketName}" &
                 EOF
 
-  Outputs:
-    MLOpsBucket:
-      Description: The name of the MLOps input bucket
-      Value: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
+Outputs:
+  MLOpsBucket:
+    Description: The name of the MLOps input bucket
+    Value: !GetAtt MLOpsStack.Outputs.PersonalizeBucketName
     
