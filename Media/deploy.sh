@@ -13,10 +13,13 @@ jupyter nbconvert --to python ./01_Data_Preparation.ipynb
 ipython ./01_Data_Preparation.py >./01_Data_Preparation.out 2>&1
 # rm ./Media/01_Data_Preparation.py
 
-sleep 60
+sleep 120
 
 echo "Starting the copy to S3 data"
 aws s3 cp ./poc_data/users.csv s3://$bucket/train/users.csv
 aws s3 cp ./poc_data/interactions.csv s3://$bucket/train/interactions.csv
 aws s3 cp ./poc_data/items.csv s3://$bucket/train/items.csv
+
+sleep 60
+
 aws s3 cp ./$2/params.json s3://$bucket/train/params.json
