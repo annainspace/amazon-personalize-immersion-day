@@ -22,4 +22,4 @@ aws s3 cp ./poc_data/items.csv s3://$bucket/train/items.csv
 
 sleep 60
 
-aws s3 cp ./$2/params.json s3://$bucket/train/params.json
+aws s3 cp ./params.json s3://$bucket/train/params.json
