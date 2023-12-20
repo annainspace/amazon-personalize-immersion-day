@@ -249,8 +249,9 @@ Resources:
               Action:
                 - "s3:GetObject*"
               Resource:
-                - !Sub arn:aws:s3:::elementalrodeo99-us-west-1/aim312
-                - !Sub arn:aws:s3:::elementalrodeo99-us-west-1/aim312/*
+                - !Sub arn:aws:s3:::personalize-solution-staging-us-east-1/personalize-immersionday-media
+                - !Sub arn:aws:s3:::personalize-solution-staging-us-east-1/personalize-immersionday-media/*
+                - !Sub arn:aws:s3:::personalize-solution-staging-us-east-1/personalize-immersionday-media/imdb/*
             -
               Effect: Allow
               Action:
